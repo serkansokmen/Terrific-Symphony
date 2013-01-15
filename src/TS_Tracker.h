@@ -2,6 +2,10 @@
 
 #include "ofMain.h"
 #include "ofxOpenCv.h"
+#include "ofxOsc.h"
+
+#define HOST "localhost"
+#define PORT 12345
 
 //#define _USE_LIVE_VIDEO       // uncomment this to use a live camera
 // otherwise, we'll use a movie file
@@ -25,6 +29,9 @@ public:
     
     vector<ofRectangle*> scanRects;
     int slitCount = 6;
+    
+    ofxOscSender sender;
+    ofxOscReceiver receiver;
     
 #ifdef _USE_LIVE_VIDEO
     ofVideoGrabber      vidGrabber;

@@ -5,6 +5,10 @@
 //--------------------------------------------------------------
 void TS_Tracker::setup(){
     
+    // open an outgoing connection to HOST:PORT
+	sender.setup(HOST, PORT);
+    receiver.setup(PORT);
+    
     vidWidth = 720;
     vidHeight = 576;
     
@@ -71,6 +75,32 @@ void TS_Tracker::update()
         // also, find holes is set to true so we will get interior contours as well....
         contourFinder.findContours(grayDiff, 20, (340 * vidHeight) / 3, slitCount, false);    // find holes
     }
+    
+    
+    // check for blobs
+    for (int i = 0; i < contourFinder.nBlobs; i++)
+    {
+        ofxCvBlob *blob = &contourFinder.blobs[i];
+        
+        for (int j=0; j<slitCount; j++)
+        {
+            int scanRectIndex = j;
+            ofRectangle rect = *scanRects[scanRectIndex];
+            ofxOscMessage m;
+            
+            m.setAddress("/line/index/state");
+            m.addIntArg(scanRectIndex);
+            
+            if (rect.inside(blob->centroid)) {
+                m.addStringArg("on");
+            } else {
+                m.addStringArg("off");
+            }
+            // m.addFloatArg(ofGetElapsedTimef());
+            sender.sendMessage(m);
+        }
+        contourFinder.blobs[i].draw(0, 0);
+    }
 }
 
 //--------------------------------------------------------------
@@ -114,6 +144,45 @@ void TS_Tracker::draw()
     char reportStr[1024];
     sprintf(reportStr, "bg subtraction and blob detection\npress ' ' to capture bg\nthreshold %i (press: +/-)\nnum blobs found %i, fps: %f", threshold, contourFinder.nBlobs, ofGetFrameRate());
     //ofDrawBitmapString(reportStr, 20, 600);
+    
+    // check for waiting messages
+	while(receiver.hasWaitingMessages()){
+		// get the next message
+		ofxOscMessage m;
+		receiver.getNextMessage(&m);
+        string msg_string;
+        
+        msg_string = m.getAddress();
+        msg_string += ": ";
+        for(int i = 0; i < m.getNumArgs(); i++){
+            // get the argument type
+            msg_string += m.getArgTypeName(i);
+            msg_string += ":";
+            // display the argument - make sure we get the right type
+            if(m.getArgType(i) == OFXOSC_TYPE_INT32){
+                msg_string += ofToString(m.getArgAsInt32(i));
+            }
+            else if(m.getArgType(i) == OFXOSC_TYPE_FLOAT){
+                msg_string += ofToString(m.getArgAsFloat(i));
+            }
+            else if(m.getArgType(i) == OFXOSC_TYPE_STRING){
+                msg_string += m.getArgAsString(i);
+            }
+            else{
+                msg_string += "unknown";
+            }
+        }
+        cout << msg_string << endl;
+        
+		// check for OSC message
+		if (m.getAddress() == "/line/index/state")
+        {
+			// get scanRectIndex
+            int scanRectIndex = m.getArgAsInt32(0);
+            // cout << "rect index " << scanRectIndex << " is " << m.getArgAsString(1) << endl;
+		}
+        
+	}
 }
 
 //--------------------------------------------------------------
