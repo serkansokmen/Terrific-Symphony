@@ -3,10 +3,10 @@
 #include "ofMain.h"
 #include "ofxOpenCv.h"
 
-//#define _USE_LIVE_VIDEO		// uncomment this to use a live camera
+//#define _USE_LIVE_VIDEO       // uncomment this to use a live camera
 // otherwise, we'll use a movie file
 
-class testApp : public ofBaseApp
+class TS_Tracker : public ofBaseApp
 {
 public:
     void setup();
@@ -27,23 +27,23 @@ public:
     int slitCount = 6;
     
 #ifdef _USE_LIVE_VIDEO
-    ofVideoGrabber 		vidGrabber;
+    ofVideoGrabber      vidGrabber;
 #else
-    ofVideoPlayer 		vidPlayer;
+    ofVideoPlayer       vidPlayer;
 #endif
     
     int vidWidth, vidHeight;
     
-    ofxCvColorImage			colorImg;
+    ofxCvColorImage         colorImg;
     
-    ofxCvGrayscaleImage 	grayImage;
-    ofxCvGrayscaleImage 	grayBg;
-    ofxCvGrayscaleImage 	grayDiff;
+    ofxCvGrayscaleImage     grayImage;
+    ofxCvGrayscaleImage     grayBg;
+    ofxCvGrayscaleImage     grayDiff;
     
-    ofxCvContourFinder 	contourFinder;
+    ofxCvContourFinder  contourFinder;
     
-    int 				threshold;
-    bool				bLearnBakground;
+    int                 threshold;
+    bool                bLearnBakground;
     
     
 };
