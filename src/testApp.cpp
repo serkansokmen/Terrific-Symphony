@@ -85,7 +85,7 @@ void testApp::draw()
     for (int i=0; i<slitCount; i++)
     {
         ofRectangle rect = *scanRects[i];
-//        ofTranslate(rect.x, rect.y);
+        //        ofTranslate(rect.x, rect.y);
         ofSetColor(255, 0, 0);
         ofRect(rect.x, rect.y, rect.width, rect.height);
     }
