@@ -7,7 +7,6 @@ void TS_Tracker::setup(){
     
     // open an outgoing connection to HOST:PORT
 	sender.setup(HOST, PORT);
-    receiver.setup(PORT);
     
     vidWidth = 720;
     vidHeight = 576;
@@ -76,48 +75,37 @@ void TS_Tracker::update()
         contourFinder.findContours(grayDiff, 20, (340 * vidHeight) / 3, slitCount, false);    // find holes
     }
     
-    
     // check for blobs
-    for (int i = 0; i < contourFinder.nBlobs; i++)
+    for (int i=0; i<slitCount; i++)
     {
-        ofxCvBlob *blob = &contourFinder.blobs[i];
+        ofxOscMessage m;
+        // add rect index to address
+        m.setAddress("/line/" + ofToString(i + 1));
+        ofRectangle rect = *scanRects[i];
+        int isInside;
         
-        for (int j=0; j<slitCount; j++)
+        for (int j = 0; j < contourFinder.nBlobs; j++)
         {
-            int scanRectIndex = j;
-            ofRectangle rect = *scanRects[scanRectIndex];
-            ofxOscMessage m;
-            
-            m.setAddress("/line/index/state");
-            m.addIntArg(scanRectIndex);
-            
-            if (rect.inside(blob->centroid)) {
-                m.addStringArg("on");
-            } else {
-                m.addStringArg("off");
-            }
-            // m.addFloatArg(ofGetElapsedTimef());
-            sender.sendMessage(m);
+            ofxCvBlob *blob = &contourFinder.blobs[j];
+            if (rect.inside(blob->centroid))
+                isInside = 1;
+            else
+                isInside = 0;
         }
-        contourFinder.blobs[i].draw(0, 0);
+        // add state as second argument
+        m.addIntArg(isInside);
+        sender.sendMessage(m);
     }
 }
 
 //--------------------------------------------------------------
 void TS_Tracker::draw()
 {
-    // draw the incoming, the grayscale, the bg and the thresholded difference
     ofSetHexColor(0xffffff);
     colorImg.draw(0,0,vidWidth, vidHeight);
     //grayImage.draw(vidWidth/2,20,vidWidth/2, vidHeight/2);
     //grayBg.draw(20,vidHeight/2,vidWidth/2, vidHeight/2);
     //grayDiff.draw(vidWidth/2,vidHeight/2,vidWidth/2, vidHeight/2);
-    
-    // draw the contours:
-    // ofFill();
-    // ofSetHexColor(0x333333);
-    // ofRect(vidWidth/2,vidHeight/2+100,vidWidth/2,vidHeight/2);
-    // ofSetHexColor(0xffffff);
     
     // check for blobs
     for (int i = 0; i < contourFinder.nBlobs; i++)
@@ -138,51 +126,6 @@ void TS_Tracker::draw()
         }
         contourFinder.blobs[i].draw(0, 0);
     }
-    
-    // report:
-    ofSetHexColor(0xffffff);
-    char reportStr[1024];
-    sprintf(reportStr, "bg subtraction and blob detection\npress ' ' to capture bg\nthreshold %i (press: +/-)\nnum blobs found %i, fps: %f", threshold, contourFinder.nBlobs, ofGetFrameRate());
-    //ofDrawBitmapString(reportStr, 20, 600);
-    
-    // check for waiting messages
-	while(receiver.hasWaitingMessages()){
-		// get the next message
-		ofxOscMessage m;
-		receiver.getNextMessage(&m);
-        string msg_string;
-        
-        msg_string = m.getAddress();
-        msg_string += ": ";
-        for(int i = 0; i < m.getNumArgs(); i++){
-            // get the argument type
-            msg_string += m.getArgTypeName(i);
-            msg_string += ":";
-            // display the argument - make sure we get the right type
-            if(m.getArgType(i) == OFXOSC_TYPE_INT32){
-                msg_string += ofToString(m.getArgAsInt32(i));
-            }
-            else if(m.getArgType(i) == OFXOSC_TYPE_FLOAT){
-                msg_string += ofToString(m.getArgAsFloat(i));
-            }
-            else if(m.getArgType(i) == OFXOSC_TYPE_STRING){
-                msg_string += m.getArgAsString(i);
-            }
-            else{
-                msg_string += "unknown";
-            }
-        }
-        cout << msg_string << endl;
-        
-		// check for OSC message
-		if (m.getAddress() == "/line/index/state")
-        {
-			// get scanRectIndex
-            int scanRectIndex = m.getArgAsInt32(0);
-            // cout << "rect index " << scanRectIndex << " is " << m.getArgAsString(1) << endl;
-		}
-        
-	}
 }
 
 //--------------------------------------------------------------
